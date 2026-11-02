@@ -14,10 +14,10 @@ class CloseByOne(BaseAlgorithm):
     def run(self) -> list[FormalConcept]:
         found_concepts: list[FormalConcept] = []
         found_concept = self.closure_of_attributes([])
-        found_concepts.append(self.complete_concept(found_concept))
+        found_concepts.append(self.remap_concept(found_concept))
         
         for concept in self._step(found_concept, 0):
-            remapped = self.complete_concept(concept)
+            remapped = self.remap_concept(concept)
             found_concepts.append(remapped)
 
         return found_concepts

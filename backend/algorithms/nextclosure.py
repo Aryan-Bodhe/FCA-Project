@@ -25,13 +25,13 @@ class NextClosure(BaseAlgorithm):
     def run(self) -> list[FormalConcept]:
         found_concepts: list[FormalConcept] = []
         found_concept = self.closure_of_attributes([])
-        found_concepts.append(self.complete_concept(found_concept))
+        found_concepts.append(self.remap_concept(found_concept))
 
         while found_concept != self.context.attributes:
             found_concept = self._step(found_concept)
             if found_concept is None:
                 break
-            remapped = self.complete_concept(found_concept)
+            remapped = self.remap_concept(found_concept)
             found_concepts.append(remapped)
 
         return found_concepts

@@ -29,7 +29,7 @@ class InClose(BaseAlgorithm):
     def run(self) -> list[FormalConcept]:
         found_concepts: list[FormalConcept] = []
         found_concept = []
-        found_concepts.append(self.complete_concept(found_concept))
+        found_concepts.append(self.remap_concept(found_concept))
         seed_objects = self.context.objects
         for c in found_concept:
             temp = self.derive_objects(c)
@@ -37,7 +37,7 @@ class InClose(BaseAlgorithm):
 
 
         for concept in self._step(seed_objects, found_concept, 0):
-            remapped = self.complete_concept(concept)
+            remapped = self.remap_concept(concept)
             found_concepts.append(remapped)
 
         return found_concepts
