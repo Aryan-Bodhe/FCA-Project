@@ -3,6 +3,7 @@ from algorithms.base import BaseAlgorithm, FormalConcept, intersection, is_subse
 class InClose(BaseAlgorithm):
     def _step(self, objects: list, attributes: list, index: int):
         n = len(self.context.attributes)
+
         for i in range(index, n):
             if i in attributes:
                 continue
@@ -11,23 +12,35 @@ class InClose(BaseAlgorithm):
             new_objects = intersection(objects, objects_having_attribute_i)
 
             if new_objects == objects:
-                attributes = attributes + [i]
+                attributes.append(i)
 
-            elif new_objects != []:
+            else:
                 is_canonical = True
+
                 for j in range(i):
-                    if j not in attributes and is_subset(new_objects, self.derive_objects(j)):
+                    if j not in attributes and is_subset(
+                        new_objects, self.derive_objects(j)
+                    ):
                         is_canonical = False
                         break
 
                 if is_canonical:
                     new_attributes = attributes + [i]
-                    yield new_attributes
-                    yield from self._step(new_objects, new_attributes, i+1)
+
+                    if new_objects == []:
+                        yield list(self.context.attributes)
+
+                    else:
+                        yield from self._step(
+                            new_objects, new_attributes, i + 1
+                        )
+
+                        yield new_attributes
+
 
 
     def run(self):
-        found_concept = []
+        found_concept = self.closure_of_attributes([])
         yield self.remap_concept(found_concept)
         
         seed_objects = self.context.objects
