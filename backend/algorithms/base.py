@@ -16,7 +16,7 @@ class BaseAlgorithm:
         pass
 
 
-    def run(self) -> list[FormalConcept]:
+    def run(self):
         pass
 
 
@@ -82,7 +82,7 @@ class BaseAlgorithm:
         return attrs
 
 
-    def remap_concept(self, attrs: list) -> list[FormalConcept]:
+    def remap_concept(self, attrs: list) -> FormalConcept:
         """
             Returns list of (object, attribute) concept pairs from given attribute list.
         """

@@ -26,18 +26,15 @@ class InClose(BaseAlgorithm):
                     yield from self._step(new_objects, new_attributes, i+1)
 
 
-    def run(self) -> list[FormalConcept]:
-        found_concepts: list[FormalConcept] = []
+    def run(self):
         found_concept = []
-        found_concepts.append(self.remap_concept(found_concept))
+        yield self.remap_concept(found_concept)
+        
         seed_objects = self.context.objects
+
         for c in found_concept:
             temp = self.derive_objects(c)
             seed_objects = intersection(seed_objects, temp)
 
-
         for concept in self._step(seed_objects, found_concept, 0):
-            remapped = self.remap_concept(concept)
-            found_concepts.append(remapped)
-
-        return found_concepts
+            yield self.remap_concept(concept)

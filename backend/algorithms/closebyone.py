@@ -11,13 +11,10 @@ class CloseByOne(BaseAlgorithm):
                     yield C
                     yield from self._step(C, i+1)
 
-    def run(self) -> list[FormalConcept]:
-        found_concepts: list[FormalConcept] = []
+    def run(self):
         found_concept = self.closure_of_attributes([])
-        found_concepts.append(self.remap_concept(found_concept))
+        yield self.remap_concept(found_concept)
         
         for concept in self._step(found_concept, 0):
-            remapped = self.remap_concept(concept)
-            found_concepts.append(remapped)
+            yield self.remap_concept(concept)
 
-        return found_concepts
