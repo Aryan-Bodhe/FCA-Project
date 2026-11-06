@@ -11,8 +11,10 @@ visualisation.
 ## Repository status and scope
 
 - The repository is `Aryan-Bodhe/FCA-Project`.
-- There is no `pyproject.toml`, `setup.py`, `requirements.txt`, lockfile,
-  Makefile, CI configuration, or configured package runner.
+- A root `pyproject.toml` exists, but it only declares dependencies and
+  tool config (pytest `testpaths`/`pythonpath`, ruff); it is **not** a package
+  definition. There is no `setup.py`, `requirements.txt`, lockfile, Makefile,
+  or CI configuration.
 - The code is not installed as a package. Imports assume `backend` is on
   `sys.path` (normally by running from `backend/` or setting
   `PYTHONPATH=backend`).
@@ -214,6 +216,33 @@ the research scripts, rather than comparing lists.
   `self.graph` starts as `None`. Do not assume it is wired to
   `ConceptLattice`.
 
+### Tracing (new; feeds the planned web visualiser)
+
+- [`backend/tracing/schema.py`](./backend/tracing/schema.py): Pydantic v2 models
+  for the trace contract in `PLAN.md` §3 (`Trace`, `Meta`, `Step`, `Focus`,
+  `AlgoInfo`, and the `AddNode`/`AddEdge`/`RemoveEdge` op union). JSON uses
+  camelCase aliases; a model validator enforces step indexing, init/done
+  bookends and count consistency.
+- [`backend/tracing/replay.py`](./backend/tracing/replay.py): `replay(trace,
+  upto)` applies ops to a `GraphState` with strict validation (mirrors the
+  frontend's future `stateAt`).
+- [`backend/tracing/lattice_builder.py`](./backend/tracing/lattice_builder.py):
+  `LatticeBuilder.add(extent, intent) -> StepDelta` maintains the Hasse diagram
+  for concepts arriving in **any order** and reports the added/removed edges.
+  Ids are discovery order; edges are `(parent, child)`. Deliberately separate
+  from `ConceptLattice`: `ConceptLattice.add_concept` only searches the parents'
+  children for new subconcepts and stores attribute deltas relative to the
+  parents at insertion time, so it is only correct for NextClosure order or
+  extent-size-sorted input (its constructor sorts). It yields a wrong Hasse
+  diagram for Close-by-One / In-Close order and for random permutations. Do not
+  use it for step-by-step traces.
+- `docs/examples/tiny_trace.json`, `docs/trace-format.md`: hand-checked fixture
+  (3×3 context, 6 concepts, one in-between insertion) and a pointer to the spec.
+  Note: NextClosure traces never contain `remove_edge` (lectic order visits
+  superconcepts first); Close-by-One and In-Close traces do.
+- Not yet implemented (see `PLAN.md`): algorithm `events()` streams (B3/B4),
+  `generator.py`/`registry.py`/`messages.py` (B5), the FastAPI app (C1).
+
 ### Entrypoints and experiments
 
 - [`backend/main.py`](./backend/main.py): current demo entrypoint. It selects
@@ -277,6 +306,19 @@ historical value, but do not use them as the source of truth for the active
 
 ### Testing and temporary experiments
 
+- [`backend/tests/`](./backend/tests/): the **real** pytest suite (run
+  `python3 -m pytest` from the repo root; pytest is configured in
+  `pyproject.toml` with `pythonpath = ["backend"]`). Not to be confused with the
+  gitignored `backend/testing/`. Contents: `helpers.py` (data-dir path helper,
+  `load_context`, `context_from_matrix`, `canonical`), `reference.py`
+  (independent brute-force concept enumerator), `test_concept_order.py`,
+  `test_algorithms_bruteforce.py` (50 seeded random + edge-case contexts, and
+  airlines/20x12, for all three algorithms), `test_algorithms_agree.py`
+  (cross-algorithm agreement, pinned concept counts, first-concept-is-top,
+  closed-pair validity), `test_smoke.py`, `test_lattice_builder.py` (builder vs
+  an independent transitive-reduction reference, for every algorithm's order and
+  random permutations), `test_schema.py` (schema + `tiny_trace.json`). The
+  100x50 dataset is deliberately not used in tests.
 - [`backend/testing/test_algo_correctness.py`](./backend/testing/test_algo_correctness.py):
   older benchmark/correctness script intended to compare algorithms. It calls
   obsolete APIs (`algo.prepare`, constructorless algorithms, and `len` on
@@ -330,6 +372,13 @@ However, `backend/main.py` currently reads `data/...` relative to the current
 working directory and selects `TkAgg`, so a headless environment may fail at
 the display step. For algorithm-only work, use a small script or an interactive
 session with `PYTHONPATH=backend` and avoid `draw()`.
+
+Run the test suite from the repository root (needs `pandas`, `networkx`,
+`pytest`; no GUI required):
+
+```bash
+python3 -m pytest
+```
 
 Useful focused checks:
 
@@ -401,7 +450,8 @@ unasked:
 - `HasseDiagram.construct()` is a placeholder.
 - Root and frontend entrypoints are empty.
 - Input dimensions and Boolean values are not validated.
-- There is no packaging, dependency pinning, CLI, web server, or automated CI.
+- There is no packaging, dependency pinning (pyproject.toml lists unpinned
+  dependencies), CLI, web server, or automated CI.
 - The active demo has inconsistent import/data path assumptions and requires a
   GUI backend for drawing.
 - Existing benchmark scripts target obsolete APIs.

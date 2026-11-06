@@ -20,7 +20,7 @@ def canonicalize(concepts: list[FormalConcept]):
     }
 
 print("Algorithm: NextClosure")
-algo = InClose(context)
+algo = NextClosure(context)
 
 concepts: list[FormalConcept] = []
 for c in algo.run():
