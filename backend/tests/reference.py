@@ -31,3 +31,22 @@ def bruteforce_concepts(
                     )
                 )
     return concepts
+
+
+def hasse_reference(extents: list[frozenset]) -> set[tuple[frozenset, frozenset]]:
+    """Independent reference for the covering relation, keyed by extent.
+
+    Builds the strict-order DAG (parent extent ⊃ child extent) over all concepts
+    and takes its transitive reduction with networkx. Returns {(parent_extent,
+    child_extent)}.
+    """
+    import networkx as nx
+
+    graph = nx.DiGraph()
+    graph.add_nodes_from(range(len(extents)))
+    for i, a in enumerate(extents):
+        for j, b in enumerate(extents):
+            if a > b:
+                graph.add_edge(i, j)
+    reduced = nx.transitive_reduction(graph)
+    return {(extents[i], extents[j]) for i, j in reduced.edges}

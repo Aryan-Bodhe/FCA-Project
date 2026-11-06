@@ -38,3 +38,17 @@ def context_from_matrix(matrix: list[list[int]]) -> FormalContext:
 def canonical(concepts) -> set[tuple[frozenset, frozenset]]:
     """Canonical set form of a concept collection (order-independent)."""
     return {(frozenset(c.objects), frozenset(c.attributes)) for c in concepts}
+
+
+def index_concepts(context: FormalContext, concepts) -> list[tuple[frozenset[int], frozenset[int]]]:
+    """Convert label-based FormalConcepts (as yielded by `run()`) to
+    (extent, intent) frozensets of integer indices, preserving order."""
+    obj_index = {label: i for i, label in context.object_map.items()}
+    attr_index = {label: i for i, label in context.attribute_map.items()}
+    return [
+        (
+            frozenset(obj_index[o] for o in c.objects),
+            frozenset(attr_index[a] for a in c.attributes),
+        )
+        for c in concepts
+    ]
