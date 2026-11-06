@@ -1,0 +1,282 @@
+{
+  "version": 1,
+  "meta": {
+    "dataset": "tiny",
+    "algorithm": "close_by_one",
+    "granularity": "concept",
+    "objects": [
+      "g1",
+      "g2",
+      "g3"
+    ],
+    "attributes": [
+      "a",
+      "b",
+      "c"
+    ],
+    "conceptCount": 6,
+    "stepCount": 8,
+    "truncated": false,
+    "maxConcepts": 2000,
+    "maxSteps": 5000
+  },
+  "steps": [
+    {
+      "index": 0,
+      "kind": "init",
+      "message": "Context: 3 objects \u00d7 3 attributes. Algorithm: Close-by-One. The lattice starts empty.",
+      "ops": [],
+      "focus": {
+        "nodes": [],
+        "addedEdges": [],
+        "removedEdges": []
+      }
+    },
+    {
+      "index": 1,
+      "kind": "concept_found",
+      "message": "Concept #0 found \u2014 extent {g1, g2, g3}, intent {}. It is the top concept.",
+      "ops": [
+        {
+          "op": "add_node",
+          "id": 0,
+          "extent": [
+            0,
+            1,
+            2
+          ],
+          "intent": []
+        }
+      ],
+      "focus": {
+        "nodes": [
+          0
+        ],
+        "addedEdges": [],
+        "removedEdges": []
+      }
+    },
+    {
+      "index": 2,
+      "kind": "concept_found",
+      "message": "Concept #1 found \u2014 extent {g3}, intent {a, b}. Inserted below #0.",
+      "ops": [
+        {
+          "op": "add_node",
+          "id": 1,
+          "extent": [
+            2
+          ],
+          "intent": [
+            0,
+            1
+          ]
+        },
+        {
+          "op": "add_edge",
+          "source": 0,
+          "target": 1
+        }
+      ],
+      "focus": {
+        "nodes": [
+          1
+        ],
+        "addedEdges": [
+          [
+            0,
+            1
+          ]
+        ],
+        "removedEdges": []
+      }
+    },
+    {
+      "index": 3,
+      "kind": "concept_found",
+      "message": "Concept #2 found \u2014 extent {}, intent {a, b, c}. Inserted below #1.",
+      "ops": [
+        {
+          "op": "add_node",
+          "id": 2,
+          "extent": [],
+          "intent": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "op": "add_edge",
+          "source": 1,
+          "target": 2
+        }
+      ],
+      "focus": {
+        "nodes": [
+          2
+        ],
+        "addedEdges": [
+          [
+            1,
+            2
+          ]
+        ],
+        "removedEdges": []
+      }
+    },
+    {
+      "index": 4,
+      "kind": "concept_found",
+      "message": "Concept #3 found \u2014 extent {g2, g3}, intent {b}. Inserted below #0. Inserted above #1. Edge #0\u2192#1 replaced because #3 lies between them.",
+      "ops": [
+        {
+          "op": "add_node",
+          "id": 3,
+          "extent": [
+            1,
+            2
+          ],
+          "intent": [
+            1
+          ]
+        },
+        {
+          "op": "remove_edge",
+          "source": 0,
+          "target": 1
+        },
+        {
+          "op": "add_edge",
+          "source": 0,
+          "target": 3
+        },
+        {
+          "op": "add_edge",
+          "source": 3,
+          "target": 1
+        }
+      ],
+      "focus": {
+        "nodes": [
+          3
+        ],
+        "addedEdges": [
+          [
+            0,
+            3
+          ],
+          [
+            3,
+            1
+          ]
+        ],
+        "removedEdges": [
+          [
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "index": 5,
+      "kind": "concept_found",
+      "message": "Concept #4 found \u2014 extent {g2}, intent {b, c}. Inserted below #3. Inserted above #2.",
+      "ops": [
+        {
+          "op": "add_node",
+          "id": 4,
+          "extent": [
+            1
+          ],
+          "intent": [
+            1,
+            2
+          ]
+        },
+        {
+          "op": "add_edge",
+          "source": 3,
+          "target": 4
+        },
+        {
+          "op": "add_edge",
+          "source": 4,
+          "target": 2
+        }
+      ],
+      "focus": {
+        "nodes": [
+          4
+        ],
+        "addedEdges": [
+          [
+            3,
+            4
+          ],
+          [
+            4,
+            2
+          ]
+        ],
+        "removedEdges": []
+      }
+    },
+    {
+      "index": 6,
+      "kind": "concept_found",
+      "message": "Concept #5 found \u2014 extent {g1, g2}, intent {c}. Inserted below #0. Inserted above #4.",
+      "ops": [
+        {
+          "op": "add_node",
+          "id": 5,
+          "extent": [
+            0,
+            1
+          ],
+          "intent": [
+            2
+          ]
+        },
+        {
+          "op": "add_edge",
+          "source": 0,
+          "target": 5
+        },
+        {
+          "op": "add_edge",
+          "source": 5,
+          "target": 4
+        }
+      ],
+      "focus": {
+        "nodes": [
+          5
+        ],
+        "addedEdges": [
+          [
+            0,
+            5
+          ],
+          [
+            5,
+            4
+          ]
+        ],
+        "removedEdges": []
+      }
+    },
+    {
+      "index": 7,
+      "kind": "done",
+      "message": "Done: 6 concepts, 7 edges.",
+      "ops": [],
+      "focus": {
+        "nodes": [],
+        "addedEdges": [],
+        "removedEdges": []
+      }
+    }
+  ]
+}
