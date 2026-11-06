@@ -324,7 +324,7 @@ class ConceptLattice:
         plt.tight_layout()
 
         plt.savefig(
-            "hasse_diagram.png",
+            "backend/temp/hasse_diagram.png",
             dpi=300,
             bbox_inches="tight",
             pad_inches=0.5
