@@ -1,0 +1,34 @@
+# Dependency + tool configuration only.
+# This is NOT an installable package definition: the code in `backend/` is run
+# with `backend` on sys.path (see PLAN.md decision 12 and AGENTS.md).
+
+[project]
+name = "fca-project"
+version = "0.0.0"
+description = "Formal Concept Analysis: concept enumeration algorithms and lattice visualisation"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas",
+    "networkx",
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic>=2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "httpx",
+    "ruff",
+]
+demo = [
+    "matplotlib",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+pythonpath = ["backend"]
+
+[tool.ruff]
+line-length = 100
+extend-exclude = ["backend/notebooks", "backend/testing", "backend/temp"]
