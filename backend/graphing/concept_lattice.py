@@ -2,13 +2,11 @@ import networkx as nx
 from models.concept import FormalConcept
 
 class ConceptLattice:
-    def __init__(self, concepts: list[FormalConcept]):
+    def __init__(self):
         self.graph = nx.DiGraph()
         self.node_counter = 0
         self.top = None
         self.finalized = False
-
-        self._build(concepts)
 
     def _sort_concepts(self, concepts):
         return sorted(
@@ -17,7 +15,7 @@ class ConceptLattice:
             reverse=True
         )
 
-    def _build(self, concepts: list[FormalConcept]):
+    def build(self, concepts: list[FormalConcept]):
         concepts = self._sort_concepts(concepts)
 
         if not concepts:

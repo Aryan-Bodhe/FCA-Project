@@ -4,7 +4,7 @@ matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import pandas as pd
 from algorithms import *
-from backend.graphing.concept_lattice import ConceptLattice
+from graphing.concept_lattice import ConceptLattice
 from models import FormalContext, FormalConcept
 
 data = pd.read_csv("data/fca_airlines.csv", index_col=0)
@@ -32,7 +32,8 @@ print()
 
 
 # Build and display lattice
-lattice = ConceptLattice(concepts)
+lattice = ConceptLattice()
+lattice.build(concepts)
 
 print("Nodes:", lattice.graph.number_of_nodes())
 print("Edges:", lattice.graph.number_of_edges())
