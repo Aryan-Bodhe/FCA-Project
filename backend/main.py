@@ -4,7 +4,7 @@ matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import pandas as pd
 from algorithms import *
-from graphing.concept_graph import ConceptLattice
+from backend.graphing.concept_lattice import ConceptLattice
 from models import FormalContext, FormalConcept
 
 data = pd.read_csv("data/fca_airlines.csv", index_col=0)
