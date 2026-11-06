@@ -1,21 +1,66 @@
 import networkx as nx
-from backend.models.concept import FormalConcept
+from models.concept import FormalConcept
 
 class ConceptLattice:
-    def __init__(self):
+    def __init__(self, concepts: list[FormalConcept]):
         self.graph = nx.DiGraph()
         self.node_counter = 0
         self.top = None
+        self.finalized = False
+
+        self._build(concepts)
+
+    def _sort_concepts(self, concepts):
+        return sorted(
+            concepts,
+            key=lambda c: len(c.objects),
+            reverse=True
+        )
+
+    def _build(self, concepts: list[FormalConcept]):
+        concepts = self._sort_concepts(concepts)
+
+        if not concepts:
+            raise ValueError("Cannot build a lattice from an empty concept list")
+
+        self.add_top(concepts[0])
+
+        for concept in concepts[1:]:
+            self.add_concept(concept)
+
+        self.finalize_object_storage()
+        self._validate(concepts)
+
+
+    def _validate(self, concepts: list[FormalConcept]):
+        if self.graph.number_of_nodes() != len(concepts):
+            raise ValueError(
+                "Graph construction failed: concept count mismatch"
+            )
+
+        for node, original in enumerate(concepts):
+            reconstructed = self.get_concept(node)
+
+            if set(original.objects) != set(reconstructed.objects):
+                raise ValueError(f"Object mismatch at node {node}")
+
+            if set(original.attributes) != set(reconstructed.attributes):
+                raise ValueError(f"Attribute mismatch at node {node}")
+
+        if not nx.is_directed_acyclic_graph(self.graph):
+            raise ValueError("Generated graph contains a cycle")
 
     def add_top(self, concept):
         node_id = self.node_counter
         self.node_counter += 1
+
         self.graph.add_node(
             node_id,
-            objects=concept.objects,
+            objects=set(concept.objects),  # Temporary
             attributes_delta=set(concept.attributes),
             level=0
         )
+
         self.top = node_id
         return node_id
 
@@ -45,9 +90,31 @@ class ConceptLattice:
         return parents
 
     def add_concept(self, concept):
+
+        if self.finalized:
+            raise RuntimeError("Cannot add concepts after finalization")
+
+        # Prevent duplicates
+        for node in self.graph.nodes:
+            if concept == self.get_concept(node):
+                return node
+
         parents = self.find_parents(concept)
 
-        # Union of complete attributes of all parents
+        if not parents:
+            raise ValueError(f"No parents found for concept: {concept}")
+
+        # Find existing nodes that should become children
+        children = set()
+
+        for parent in parents:
+            for child in self.get_children(parent):
+                child_concept = self.get_concept(child)
+
+                if child_concept < concept:
+                    children.add(child)
+
+        # Incremental attributes
         parent_attributes = set()
 
         for parent in parents:
@@ -55,7 +122,6 @@ class ConceptLattice:
                 self.get_full_attributes(parent)
             )
 
-        # Only newly introduced attributes
         attributes_delta = (
             set(concept.attributes) - parent_attributes
         )
@@ -70,16 +136,25 @@ class ConceptLattice:
 
         self.graph.add_node(
             node_id,
-            objects=concept.objects,
+            objects=set(concept.objects),
             attributes_delta=attributes_delta,
             level=level
         )
 
+        # Add parent edges
         for parent in parents:
             self.graph.add_edge(parent, node_id)
 
-        return node_id
+        # Redirect child edges
+        for child in children:
+            for parent in self.get_parents(child):
+                if parent in parents:
+                    self.graph.remove_edge(parent, child)
 
+            self.graph.add_edge(node_id, child)
+
+        return node_id
+    
     def get_parents(self, node):
         return list(self.graph.predecessors(node))
 
@@ -103,6 +178,10 @@ class ConceptLattice:
 
 
     def get_node_objects(self, node):
+
+        if self.finalized:
+            return self.graph.nodes[node]["objects_delta"]
+
         return self.graph.nodes[node]["objects"]
 
 
@@ -126,16 +205,65 @@ class ConceptLattice:
 
         return attributes
 
+    def get_full_objects(self, node):
+
+        if not self.finalized:
+            return set(self.graph.nodes[node]["objects"])
+
+        descendants = nx.descendants(self.graph, node)
+        descendants.add(node)
+
+        objects = set()
+
+        for descendant in descendants:
+            objects.update(
+                self.graph.nodes[descendant]["objects_delta"]
+            )
+
+        return objects
+
     def get_concept(self, node):
+        if self.finalized:
+            objects = self.get_full_objects(node)
+        else:
+            objects = self.graph.nodes[node]["objects"]
+
         return FormalConcept(
-            objects=self.graph.nodes[node]["objects"],
+            objects=list(objects),
             attributes=list(self.get_full_attributes(node))
         )
+
+    def finalize_object_storage(self):
+
+        if self.finalized:
+            return
+
+        # Calculate all object deltas before deleting complete sets
+        for node in self.graph.nodes:
+
+            node_objects = self.graph.nodes[node]["objects"]
+
+            child_objects = set()
+
+            for child in self.get_children(node):
+                child_objects.update(
+                    self.graph.nodes[child]["objects"]
+                )
+
+            self.graph.nodes[node]["objects_delta"] = (
+                node_objects - child_objects
+            )
+
+        # Remove redundant complete object sets
+        for node in self.graph.nodes:
+            del self.graph.nodes[node]["objects"]
+
+        self.finalized = True
 
     def draw(self):
         import matplotlib.pyplot as plt
 
-        fig, ax = plt.subplots(figsize=(14, 10), dpi=160)
+        fig, ax = plt.subplots(figsize=(16, 12), dpi=160)
 
         pos = nx.multipartite_layout(
             self.graph,
@@ -144,20 +272,24 @@ class ConceptLattice:
             scale=1.5
         )
 
-        # Flip vertically so top concept is at the top
+        # Top concept at the top
         pos = {
             node: (x, -y)
             for node, (x, y) in pos.items()
         }
 
-        labels = {
-            node: (
+        labels = {}
+
+        for node in self.graph.nodes:
+
+            objects = self.get_node_objects(node)
+            attributes = self.get_node_attributes(node)
+
+            labels[node] = (
                 f"Node {node}\n"
-                f"Attributes: "
-                f"{', '.join(sorted(self.get_node_attributes(node)))}"
+                f"Objects: {', '.join(map(str, sorted(objects)))}\n"
+                f"Attributes: {', '.join(map(str, sorted(attributes)))}"
             )
-            for node in self.graph.nodes
-        }
 
         nx.draw_networkx_edges(
             self.graph,
@@ -172,7 +304,7 @@ class ConceptLattice:
             self.graph,
             pos,
             ax=ax,
-            node_size=400,
+            node_size=500,
             node_color="lightblue",
             edgecolors="steelblue"
         )
@@ -182,17 +314,17 @@ class ConceptLattice:
             pos,
             labels=labels,
             ax=ax,
-            font_size=9,
+            font_size=8,
             verticalalignment="bottom"
         )
 
-        ax.margins(0.25)
+        ax.margins(0.3)
         ax.axis("off")
 
         plt.tight_layout()
 
         plt.savefig(
-            "temp/hasse_diagram.png",
+            "hasse_diagram.png",
             dpi=300,
             bbox_inches="tight",
             pad_inches=0.5
@@ -204,19 +336,15 @@ class ConceptLattice:
 
         query = set(attributes)
 
-        candidates = []
-
-        for node in self.graph.nodes:
-
-            full_attributes = self.get_full_attributes(node)
-
-            if query.issubset(full_attributes):
-                candidates.append(node)
+        candidates = [
+            node
+            for node in self.graph.nodes
+            if query.issubset(self.get_full_attributes(node))
+        ]
 
         if not candidates:
             return None
 
-        # Find the smallest closed intent containing the query
         node = min(
             candidates,
             key=lambda n: len(self.get_full_attributes(n))
@@ -224,7 +352,7 @@ class ConceptLattice:
 
         return {
             "node": node,
-            "objects": self.graph.nodes[node]["objects"],
+            "objects": self.get_full_objects(node),
             "closure": self.get_full_attributes(node)
         }
 
